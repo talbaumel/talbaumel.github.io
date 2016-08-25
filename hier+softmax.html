@@ -12209,8 +12209,6 @@ all nodes in path [0, 0, 0, 0]:
 <span class="n">EMBEDDINGS_SIZE</span> <span class="o">=</span> <span class="mi">200</span>
 <span class="n">ENC_STATE_SIZE</span> <span class="o">=</span> <span class="mi">210</span>
 <span class="n">DEC_STATE_SIZE</span> <span class="o">=</span> <span class="mi">210</span>
-
-<span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span><span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12220,16 +12218,43 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span><span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
+
+<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0:08:03.864231
+loss on validation set: 2.18331918505
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Lets add hierarchical softmax to the model:</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
@@ -12237,7 +12262,6 @@ all nodes in path [0, 0, 0, 0]:
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">characters</span><span class="p">)</span>
-
 
 <span class="n">RNN_BUILDER</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">LSTMBuilder</span>
 <span class="k">class</span> <span class="nc">AttentionNetworkWithHierSoftmax</span><span class="p">(</span><span class="n">AttentionNetwork</span><span class="p">):</span>
@@ -12315,18 +12339,15 @@ loss on validation set: 1.41154876177
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
 <div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span> 
-</pre></div>
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>About me: <a href="https://www.cs.bgu.ac.il/~talbau/">https://www.cs.bgu.ac.il/~talbau/</a></p>
 
 </div>
 </div>
-</div>
-
 </div>
     </div>
   </div>
