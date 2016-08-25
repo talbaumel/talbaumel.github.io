@@ -41,12 +41,12 @@ class SimpleRNNNetwork:
         rnn_outputs = [s.output() for s in states]
         return rnn_outputs
 
-    def _get_probs(self, rnn_output):
+    def _get_probs(self, rnn_output, output_char):
         output_w = pc.parameter(self.model["output_w"])
         output_b = pc.parameter(self.model["output_b"])
 
         probs = pc.softmax(output_w * rnn_output + output_b)
-        return probs
+        return -pc.log(pc.pick(probs, output_char))
 
     def get_loss(self, input_string, output_string):
         input_string = self._preprocess_input(input_string)
@@ -59,12 +59,12 @@ class SimpleRNNNetwork:
         rnn_outputs = self._run_rnn(rnn_state, embedded_string)
         loss = []
         for rnn_output, output_char in zip(rnn_outputs, output_string):
-            probs = self._get_probs(rnn_output)
-            loss.append(-pc.log(pc.pick(probs, output_char)))
+            loss.append(self._get_probs(rnn_output.output(), output_char))
         loss = pc.esum(loss)
         return loss
 
-    def _predict(self, probs):
+    def _predict(self, rnn_output):
+        probs = self._get_probs(rnn_output)
         probs = probs.value()
         predicted_char = int2char[probs.index(max(probs))]
         return predicted_char
@@ -80,8 +80,7 @@ class SimpleRNNNetwork:
 
         output_string = []
         for rnn_output in rnn_outputs:
-            probs = self._get_probs(rnn_output)
-            predicted_char = self._predict(probs)
+            predicted_char = self._predict(rnn_output.output())
             output_string.append(predicted_char)
         output_string = ''.join(output_string)
         return output_string
@@ -125,8 +124,7 @@ class EncoderDecoderNetwork(SimpleRNNNetwork):
         loss = []
         for output_char in output_string:
             rnn_state = rnn_state.add_input(encoded_string)
-            probs = self._get_probs(rnn_state.output())
-            loss.append(-pc.log(pc.pick(probs, output_char)))
+            loss.append(self._get_probs(rnn_state.output(), output_char))
         loss = pc.esum(loss)
         return loss
 
@@ -144,8 +142,7 @@ class EncoderDecoderNetwork(SimpleRNNNetwork):
         output_string = []
         while True:
             rnn_state = rnn_state.add_input(encoded_string)
-            probs = self._get_probs(rnn_state.output())
-            predicted_char = self._predict(probs)
+            predicted_char = self._predict(rnn_state.output())
             output_string.append(predicted_char)
             if predicted_char == EOS or len(output_string) > 2*len(input_string):
                 break
@@ -195,8 +192,7 @@ class AttentionNetwork(EncoderDecoderNetwork):
         for output_char in output_string:
             attended_encoding = self._attend(encoded_string, rnn_state)
             rnn_state = rnn_state.add_input(attended_encoding)
-            probs = self._get_probs(rnn_state.output())
-            loss.append(-pc.log(pc.pick(probs, output_char)))
+            loss.append(self._get_probs(rnn_state.output(), output_char))
         loss = pc.esum(loss)
         return loss
 
@@ -214,8 +210,7 @@ class AttentionNetwork(EncoderDecoderNetwork):
         while True:
             attended_encoding = self._attend(encoded_string, rnn_state)
             rnn_state = rnn_state.add_input(attended_encoding)
-            probs = self._get_probs(rnn_state.output())
-            predicted_char = self._predict(probs)
+            predicted_char = self._predict(rnn_state.output())
             output_string.append(predicted_char)
             if predicted_char == EOS or len(output_string) > 2*len(input_string):
                 break
