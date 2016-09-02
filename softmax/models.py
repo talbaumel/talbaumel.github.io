@@ -9,14 +9,14 @@ class SimpleRNNNetwork:
         self.model = pc.Model()
 
         # the embedding paramaters
-        self.model.add_lookup_parameters("lookup", (VOCAB_SIZE, embeddings_size))
+        self.model.add_lookup_parameters("lookup", (data.VOCAB_SIZE, embeddings_size))
 
         # the rnn
         self.RNN = RNN_BUILDER(rnn_num_of_layers, embeddings_size, state_size, self.model)
 
         # project the rnn output to a vector of VOCAB_SIZE length
-        self.model.add_parameters("output_w", (VOCAB_SIZE, state_size))
-        self.model.add_parameters("output_b", (VOCAB_SIZE))
+        self.model.add_parameters("output_w", (data.VOCAB_SIZE, state_size))
+        self.model.add_parameters("output_b", (data.VOCAB_SIZE))
 
     def _add_eos(self, string):
         string = string.split() + [data.EOS]

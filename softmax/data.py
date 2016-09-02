@@ -20,3 +20,13 @@ MAX_STRING_LEN = 5
 
 train_set = [sample_model(1, MAX_STRING_LEN) for _ in xrange(3000)]
 val_set = [sample_model(1, MAX_STRING_LEN) for _ in xrange(50)]
+
+def set_vocab_size(size):
+    global characters, char2int, int2char, VOCAB_SIZE
+    characters = [str(i) for i in range(size)]
+    characters.append(EOS)
+
+    int2char = list(characters)
+    char2int = {c:i for i,c in enumerate(characters)}
+
+    VOCAB_SIZE = len(characters)
