@@ -11760,7 +11760,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now that we are familiar with sequence to sequence models let’s discuss  how to scale them to real world problems. In the previous example we used a very small vocabulary (4 symbols $“a,b,c,d”$)  but when dealing with tasks such as automatic machine translation our vocabulary can contain thousands of unique words, that means that the last layer of our network must be the dimension as the size of the vocabulary and $softmax$ must be applied on an extremely long vector. When training a network we cannot afford such a costly operation.</p>
+<p>Now that we are familiar with sequence to sequence models let’s discuss  how to scale them to real world problems. In the previous example we used a very small vocabulary (4 symbols $“a,b,c,d”$)  but when dealing with tasks such as machine translation our vocabulary can contain thousands of unique words, that means that the last layer of our network must be the dimension as the size of the vocabulary and $softmax$ must be applied on an extremely long vector. When training a network we cannot afford such a costly operation.</p>
 
 </div>
 </div>
@@ -11770,7 +11770,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>That's why hierarchical softmax was invented, it can increase softmax time by up to $log(n)$ without adding compromising too much of the network reliability.</p>
+<p>That's why hierarchical softmax was invented, it can increase softmax computation time by up to $log(n)$ without compromising too much of the network reliability.</p>
 
 </div>
 </div>
@@ -11862,7 +11862,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The probabilty of the network to predict "D" is (the probabilty of choosing the 2nd branch in $B_1$)<em>(the provavilty of choosing the 1st branch on $B_3$). More formally:  $P(class=D | V) = softmax(V \times W_{B_1})_1</em>softmax(V \times W_{B_3})_0$</p>
+<p>The probabilty of the network to predict "D" is (the probabilty of choosing the 2nd branch in $B_1$)<em>(the probability of choosing the 1st branch on $B_3$). More formally:  $P(class=D | V) = softmax(V \times W_{B_1})_1</em>softmax(V \times W_{B_3})_0$</p>
 
 </div>
 </div>
@@ -11895,6 +11895,11 @@ div#notebook {
 <div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
 
+<span class="k">def</span> <span class="nf">tag_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">tag</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">tag_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
     <span class="k">yield</span> <span class="n">tree</span>
     <span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
@@ -11912,13 +11917,17 @@ div#notebook {
         <span class="k">else</span><span class="p">:</span>
             <span class="k">yield</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">subtree</span>
 
-
+<span class="c1">#memoization for _count_nodes functions</span>
+<span class="n">_count_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="c1"># Returns the number of nodes in a tree (not including root)</span>
 <span class="k">def</span> <span class="nf">_count_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">_count_nodes_dict</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_count_nodes_dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">_count_nodes_dict</span><span class="p">)]</span>
     <span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
             <span class="n">size</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">_count_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+    <span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">_count_nodes_dict</span><span class="p">)]</span> <span class="o">=</span> <span class="n">size</span>
     <span class="k">return</span> <span class="n">size</span>
 
 
@@ -11997,34 +12006,34 @@ div#notebook {
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Our tree: [[[[8, 3], [0, 9]], [[1, 7], [4, 5]]], [2, 6]]
+<pre>Our tree: [[[[7, 5], [4, 8]], [[3, 2], [6, 1]]], [0, 9]]
 All subtrees:
-	[[[[8, 3], [0, 9]], [[1, 7], [4, 5]]], [2, 6]]
-	[[[8, 3], [0, 9]], [[1, 7], [4, 5]]]
-	[[8, 3], [0, 9]]
-	[8, 3]
+	[[[[7, 5], [4, 8]], [[3, 2], [6, 1]]], [0, 9]]
+	[[[7, 5], [4, 8]], [[3, 2], [6, 1]]]
+	[[7, 5], [4, 8]]
+	[7, 5]
+	[4, 8]
+	[[3, 2], [6, 1]]
+	[3, 2]
+	[6, 1]
 	[0, 9]
-	[[1, 7], [4, 5]]
-	[1, 7]
-	[4, 5]
-	[2, 6]
 All paths and leaves:
-	([0, 0, 0, 0], 8)
-	([0, 0, 0, 1], 3)
-	([0, 0, 1, 0], 0)
-	([0, 0, 1, 1], 9)
-	([0, 1, 0, 0], 1)
-	([0, 1, 0, 1], 7)
-	([0, 1, 1, 0], 4)
-	([0, 1, 1, 1], 5)
-	([1, 0], 2)
-	([1, 1], 6)
-Number of nodes in the tree: 8
+	([0, 0, 0, 0], 7)
+	([0, 0, 0, 1], 5)
+	([0, 0, 1, 0], 4)
+	([0, 0, 1, 1], 8)
+	([0, 1, 0, 0], 3)
+	([0, 1, 0, 1], 2)
+	([0, 1, 1, 0], 6)
+	([0, 1, 1, 1], 1)
+	([1, 0], 0)
+	([1, 1], 9)
+Number of nodes in the tree: 14
 all nodes in path [0, 0, 0, 0]:
 	0
-	1
-	2
-	3
+	15
+	30
+	45
 </pre>
 </div>
 </div>
@@ -12052,6 +12061,8 @@ all nodes in path [0, 0, 0, 0]:
 
 <span class="k">class</span> <span class="nc">hier_softmax</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">contex_size</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">_count_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        
         <span class="c1">#create a weight matrix and bias vector for each node in the tree</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">)):</span>
             <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="s2">&quot;softmax_node_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_w&quot;</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="p">),</span> <span class="n">contex_size</span><span class="p">))</span>
@@ -12061,7 +12072,7 @@ all nodes in path [0, 0, 0, 0]:
         <span class="n">value_to_path_and_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="n">_get_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-            <span class="n">value_to_path_and_nodes_dict</span><span class="p">[</span><span class="n">char2int</span><span class="p">[</span><span class="n">value</span><span class="p">]]</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span> <span class="n">nodes</span>
+            <span class="n">value_to_path_and_nodes_dict</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">char2int</span><span class="p">[</span><span class="n">value</span><span class="p">]]</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span> <span class="n">nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">value_to_path_and_nodes_dict</span> <span class="o">=</span> <span class="n">value_to_path_and_nodes_dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">tree</span>
@@ -12110,24 +12121,11 @@ all nodes in path [0, 0, 0, 0]:
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">choice</span><span class="p">,</span> <span class="n">randrange</span>
+<span class="kn">import</span> <span class="nn">data</span>
 
-<span class="n">EOS</span> <span class="o">=</span> <span class="s2">&quot;&lt;EOS&gt;&quot;</span> <span class="c1">#all strings will end with the End Of String token</span>
-<span class="n">characters</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)]</span>
-<span class="n">characters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">EOS</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">set_vocab_size</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 
-<span class="n">int2char</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">characters</span><span class="p">)</span>
-<span class="n">char2int</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">characters</span><span class="p">)}</span>
-
-<span class="n">VOCAB_SIZE</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">characters</span><span class="p">)</span>
-
-<span class="k">def</span> <span class="nf">sample_model</span><span class="p">(</span><span class="n">min_length</span><span class="p">,</span> <span class="n">max_lenth</span><span class="p">):</span>
-    <span class="n">random_length</span> <span class="o">=</span> <span class="n">randrange</span><span class="p">(</span><span class="n">min_length</span><span class="p">,</span> <span class="n">max_lenth</span><span class="p">)</span>                             <span class="c1"># Pick a random length</span>
-    <span class="n">random_char_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">choice</span><span class="p">(</span><span class="n">characters</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">random_length</span><span class="p">)]</span>  <span class="c1"># Pick random chars</span>
-    <span class="n">random_string</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random_char_list</span><span class="p">)</span>
-    <span class="n">reverse_string</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random_char_list</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">random_string</span><span class="p">,</span> <span class="n">reverse_string</span>  <span class="c1"># Return the random string and its reverse</span>
-
-<span class="k">print</span> <span class="n">sample_model</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12140,7 +12138,7 @@ all nodes in path [0, 0, 0, 0]:
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>(&#39;120 53 316 502&#39;, &#39;502 316 53 120&#39;)
+<pre>(&#39;203 147 126 52&#39;, &#39;52 126 147 203&#39;)
 </pre>
 </div>
 </div>
@@ -12154,12 +12152,11 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="n">MAX_STRING_LEN</span> <span class="o">=</span> <span class="mi">5</span>
 
-<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">3000</span><span class="p">)]</span>
-<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">50</span><span class="p">)]</span>
+<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">3000</span><span class="p">)]</span>
+<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">50</span><span class="p">)]</span>
 
 <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">=</span> <span class="mi">20</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">get_val_set_loss</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">val_set</span><span class="p">):</span>
@@ -12199,7 +12196,7 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">models</span> <span class="kn">import</span> <span class="n">AttentionNetwork</span>
@@ -12218,30 +12215,15 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span><span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
 
-<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
+<span class="c1">#train(att, train_set, val_set)</span>
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>0:08:03.864231
-loss on validation set: 2.18331918505
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -12258,10 +12240,10 @@ loss on validation set: 2.18331918505
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">characters</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">characters</span><span class="p">)</span>
 
 <span class="n">RNN_BUILDER</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">LSTMBuilder</span>
 <span class="k">class</span> <span class="nc">AttentionNetworkWithHierSoftmax</span><span class="p">(</span><span class="n">AttentionNetwork</span><span class="p">):</span>
@@ -12269,7 +12251,7 @@ loss on validation set: 2.18331918505
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
 
         <span class="c1"># the embedding paramaters</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_lookup_parameters</span><span class="p">(</span><span class="s2">&quot;lookup&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">VOCAB_SIZE</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_lookup_parameters</span><span class="p">(</span><span class="s2">&quot;lookup&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">VOCAB_SIZE</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">))</span>
 
         <span class="c1"># the rnns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ENC_RNN</span> <span class="o">=</span> <span class="n">RNN_BUILDER</span><span class="p">(</span><span class="n">enc_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
@@ -12282,7 +12264,6 @@ loss on validation set: 2.18331918505
 
         <span class="bp">self</span><span class="o">.</span><span class="n">enc_state_size</span> <span class="o">=</span> <span class="n">enc_state_size</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">tree</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hier_softmax</span> <span class="o">=</span> <span class="n">hier_softmax</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
     
     <span class="k">def</span> <span class="nf">_get_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_output</span><span class="p">,</span> <span class="n">output_char</span><span class="p">):</span>
@@ -12300,31 +12281,16 @@ loss on validation set: 2.18331918505
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetworkWithHierSoftmax</span><span class="p">(</span>
     <span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">,</span> <span class="n">output_tree</span><span class="p">)</span>
 
-<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
+<span class="c1">#train(att, train_set, val_set)</span>
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>0:07:23.806474
-loss on validation set: 1.41154876177
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -12339,6 +12305,59 @@ loss on validation set: 1.41154876177
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">data</span><span class="o">.</span><span class="n">set_vocab_size</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+
+<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
+
+<span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">characters</span><span class="p">)</span>
+
+
+<span class="n">ENC_RNN_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">DEC_RNN_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">EMBEDDINGS_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">ENC_STATE_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">DEC_STATE_SIZE</span> <span class="o">=</span> <span class="mi">100</span>
+
+
+<span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetworkWithHierSoftmax</span><span class="p">(</span>
+    <span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">,</span> <span class="n">output_tree</span><span class="p">)</span>
+
+<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span>
+    <span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
+
+<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0:00:00.041189
+loss on validation set: 83.8740997314
+0:00:00.064382
+loss on validation set: 57.4016151428
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
 <div class="cell border-box-sizing text_cell rendered">
 <div class="prompt input_prompt">
 </div>
@@ -12348,6 +12367,19 @@ loss on validation set: 1.41154876177
 
 </div>
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span> 
+</pre></div>
+
+</div>
+</div>
+</div>
+
 </div>
     </div>
   </div>
