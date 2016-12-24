@@ -11760,7 +11760,24 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Simple example of how to use mini-batches for RNNs in DyNet</p>
+<p>When training RNNs on sequences, there is a need to batch sequences that have different 
+lengths into batches.  This allows the RNN trainer to execute one batch at a time with the same
+graph, that is constructed for one specific sequence length.</p>
+<p>The mechanics of batching sequences, padding them, training and then testing is a bit confusing at first.  This notebook illustrates how to perform this mini-batching process in DyNet.</p>
+<p>The task we illustrate is a sequence classifier: we map sequences to a label.</p>
+<p>The input consists of pairs $(s_j, label_j)$ where $s_j$ are sequences of words in a vocabulary of size
+VOCAB_SIZE and $label_j$ are labels in a label set of size NUM_OF_CLASSES.
+Each sequence of words $s_j$ contains words $w_{ij}, i \in 1...l_j]$.</p>
+<p>The architecture consists of the following steps:</p>
+<ol>
+<li>Embed the words in the sequence $s_j$ into vectors of a fixed size: $e_{ij} = E * oneshot(w_{ij})$ 
+of dim EMBEDDING_SIZE.</li>
+<li>Encode the sequence of word embeddings using an LSTM $encoding(s_j) = lstm([e_{ij}, i \in 1...l_j])$
+of dim STATE_SIZE</li>
+<li>Pass the resulting LSTM encoding into a softmax dense layer $predict(s_j) = softmax(W \times encoding(s_j) + b)$ of dim NUM_OF_CLASSES.</li>
+<li>The loss is the cross-entropy loss: $loss_j = cross\_entropy(predict(s_j), label_j)$</li>
+</ol>
+<p>&lt;img src='model.jpg' width=50%&gt;&lt;/img&gt;</p>
 
 </div>
 </div>
@@ -11771,11 +11788,21 @@ div#notebook {
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">dynet</span> <span class="k">as</span> <span class="nn">dn</span>
-<span class="kn">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">randint</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">time</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">mean</span><span class="p">,</span> <span class="n">argmax</span><span class="p">,</span> <span class="n">ceil</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">mean</span><span class="p">,</span> <span class="n">argmax</span>
+</pre></div>
 
-<span class="n">VOCAB_SIZE</span> <span class="o">=</span> <span class="mi">2</span>
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">VOCAB_SIZE</span> <span class="o">=</span> <span class="mi">2</span>
 <span class="n">EMBEDDINGS_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">LSTM_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="n">STATE_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
@@ -11803,33 +11830,35 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>For this example we will create a random sequence-&gt;labael dataset<br/>
-The sequences will be of variable length</p>
+<p>For this example, we create a synthetic random dataset, mapping random sequences to labels.
+The sequences are of variable length from a uniform distribution of lengths [1..max_seq].</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">gen_random_dataset</span><span class="p">(</span><span class="n">num_of_examples</span><span class="p">,</span> <span class="n">max_seq</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">randint</span>
+
+<span class="k">def</span> <span class="nf">gen_random_dataset</span><span class="p">(</span><span class="n">num_of_examples</span><span class="p">,</span> <span class="n">max_seq</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">num_of_classes</span><span class="p">):</span>
     <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">Y</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_of_examples</span><span class="p">):</span>
         <span class="n">seq</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_seq</span><span class="o">-</span><span class="mi">1</span><span class="p">)):</span>
-            <span class="n">seq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">VOCAB_SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">seq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vocab_size</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
-        <span class="n">Y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">NUM_OF_CLASSES</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">Y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_of_classes</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
 
 <span class="k">def</span> <span class="nf">print_dataset</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">seq</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;seq:&#39;</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="s1">&#39;label:&#39;</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;label:&#39;</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="s1">&#39;seq:&#39;</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span>
 
-<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">gen_random_dataset</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">gen_random_dataset</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">VOCAB_SIZE</span><span class="p">,</span> <span class="n">NUM_OF_CLASSES</span><span class="p">)</span>
 <span class="n">print_dataset</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 </pre></div>
 
@@ -11843,16 +11872,16 @@ The sequences will be of variable length</p>
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>seq: [1, 1] label: 1
-seq: [0] label: 0
-seq: [1] label: 1
-seq: [1, 0, 1, 1, 0, 1, 1] label: 0
-seq: [0, 1, 1, 0, 0, 1] label: 1
-seq: [1, 0, 0, 0, 1] label: 1
-seq: [1, 0, 1] label: 0
-seq: [0, 1, 1, 1, 0] label: 1
-seq: [1, 1, 0, 1, 0, 0, 0] label: 0
-seq: [0, 0, 0, 1] label: 0
+<pre>label: 1 seq: [1, 1, 0, 0, 1]
+label: 0 seq: [0, 0]
+label: 0 seq: [0, 1, 0, 1, 0]
+label: 0 seq: [1, 1, 0, 1, 0, 0, 1, 1]
+label: 0 seq: [1, 1, 1, 0, 1, 1]
+label: 1 seq: [1, 1, 0, 0]
+label: 0 seq: [0, 1, 1, 0, 1, 1, 1]
+label: 0 seq: [0, 1, 1, 0, 0, 1, 1, 1, 1]
+label: 1 seq: [1, 0, 0, 0, 0]
+label: 0 seq: [0, 0, 0, 0, 0]
 </pre>
 </div>
 </div>
@@ -11866,7 +11895,7 @@ seq: [0, 0, 0, 1] label: 0
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Preapere-Batches">Preapere Batches<a class="anchor-link" href="#Preapere-Batches">&#182;</a></h2>
+<h2 id="Prepare-Batches">Prepare Batches<a class="anchor-link" href="#Prepare-Batches">&#182;</a></h2>
 </div>
 </div>
 </div>
@@ -11875,30 +11904,31 @@ seq: [0, 0, 0, 1] label: 0
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We will split our dataset to batches
-DyNet can only handle batches with same length sequences
-First we will sort the dataset by length to make length variance of each batch minimal</p>
+<p>This part is the key technical aspect of this notebook.</p>
+<p>We split our dataset into batches so that we can train each batch with a single RNN of a fixed size.</p>
+<p>Firstly, we sort the dataset by length so that batches regroup sequences of similar lengths together.  The effect is that the length variance of each batch will be minimal.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">to_batch</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
-    <span class="k">global</span> <span class="n">VOCAB_SIZE</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">ceil</span>
+<span class="k">def</span> <span class="nf">to_batch</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
     <span class="c1">#sort dataset by length</span>
     <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))))</span>
     <span class="n">batched_X</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">batched_Y</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">/</span><span class="n">BATCH_SIZE</span><span class="p">))):</span>
-        <span class="n">batched_X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="o">*</span><span class="n">BATCH_SIZE</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">BATCH_SIZE</span><span class="p">])</span>
-        <span class="n">batched_Y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="o">*</span><span class="n">BATCH_SIZE</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">BATCH_SIZE</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">/</span><span class="n">batch_size</span><span class="p">))):</span>
+        <span class="n">batched_X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="o">*</span><span class="n">batch_size</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">batch_size</span><span class="p">])</span>
+        <span class="n">batched_Y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="o">*</span><span class="n">batch_size</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">batch_size</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">batched_X</span><span class="p">,</span> <span class="n">batched_Y</span>
 
-<span class="n">batched_X</span><span class="p">,</span> <span class="n">batched_Y</span> <span class="o">=</span> <span class="n">to_batch</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">batched_X</span><span class="p">,</span> <span class="n">batched_Y</span> <span class="o">=</span> <span class="n">to_batch</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">BATCH_SIZE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dataset in batches of size &quot;</span><span class="p">,</span> <span class="n">BATCH_SIZE</span><span class="p">)</span>
 <span class="n">print_dataset</span><span class="p">(</span><span class="n">batched_X</span><span class="p">,</span> <span class="n">batched_Y</span><span class="p">)</span>
 </pre></div>
 
@@ -11912,11 +11942,12 @@ First we will sort the dataset by length to make length variance of each batch m
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>seq: ([0], [1]) label: (0, 1)
-seq: ([1, 1], [1, 0, 1]) label: (1, 0)
-seq: ([0, 0, 0, 1], [1, 0, 0, 0, 1]) label: (0, 1)
-seq: ([0, 1, 1, 1, 0], [0, 1, 1, 0, 0, 1]) label: (1, 1)
-seq: ([1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]) label: (0, 0)
+<pre>Dataset in batches of size  2
+label: (0, 1) seq: ([0, 0], [1, 1, 0, 0])
+label: (1, 0) seq: ([1, 1, 0, 0, 1], [0, 1, 0, 1, 0])
+label: (1, 0) seq: ([1, 0, 0, 0, 0], [0, 0, 0, 0, 0])
+label: (0, 0) seq: ([1, 1, 1, 0, 1, 1], [0, 1, 1, 0, 1, 1, 1])
+label: (0, 0) seq: ([1, 1, 0, 1, 0, 0, 1, 1], [0, 1, 1, 0, 0, 1, 1, 1, 1])
 </pre>
 </div>
 </div>
@@ -11930,17 +11961,18 @@ seq: ([1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]) label: (0, 0)
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Since in each batch all sequences must be the same length so we will pad the begining of each sequence with a new vocabilary token</p>
+<p>We now must ensure that in each batch, all sequences will have the same length.
+We achieve this by padding the beginning of each sequence with a new vocabulary token which serves as a special code for "padding".</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#add new token to vocab</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#add new padding token to the vocabulary</span>
 <span class="n">VOCAB_SIZE</span> <span class="o">+=</span> <span class="mi">1</span>
 
 <span class="k">def</span> <span class="nf">pad_batch</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
@@ -11966,11 +11998,11 @@ seq: ([1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]) label: (0, 0)
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>seq: [[0], [1]] label: (0, 1)
-seq: [[2, 1, 1], [1, 0, 1]] label: (1, 0)
-seq: [[2, 0, 0, 0, 1], [1, 0, 0, 0, 1]] label: (0, 1)
-seq: [[2, 0, 1, 1, 1, 0], [0, 1, 1, 0, 0, 1]] label: (1, 1)
-seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
+<pre>label: (0, 1) seq: [[2, 2, 0, 0], [1, 1, 0, 0]]
+label: (1, 0) seq: [[1, 1, 0, 0, 1], [0, 1, 0, 1, 0]]
+label: (1, 0) seq: [[1, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+label: (0, 0) seq: [[2, 1, 1, 1, 0, 1, 1], [0, 1, 1, 0, 1, 1, 1]]
+label: (0, 0) seq: [[2, 1, 1, 0, 1, 0, 0, 1, 1], [0, 1, 1, 0, 0, 1, 1, 1, 1]]
 </pre>
 </div>
 </div>
@@ -11993,14 +12025,14 @@ seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Our model is simple, embed each item run a RNN over all embeded items use the last output to classify the sequence</p>
+<p>Our model is simple: embed each item, run a RNN over all the embedded items, use the last output to classify the sequence with a softmax layer.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">dn</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
@@ -12009,14 +12041,15 @@ seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
 <span class="n">output_w</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="n">NUM_OF_CLASSES</span><span class="p">,</span> <span class="n">STATE_SIZE</span><span class="p">))</span>
 <span class="n">output_b</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="n">NUM_OF_CLASSES</span><span class="p">))</span>
 
-<span class="c1">#define a function to return to mode prediction over a batch</span>
+<span class="c1"># Return the model prediction over a batch - each prediction is a vector (p_i) of dim NUM_OF_CLASSES</span>
+<span class="c1"># As usual we do not apply the softmax here - but in the loss function.</span>
 <span class="k">def</span> <span class="nf">get_probs</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
     <span class="n">dn</span><span class="o">.</span><span class="n">renew_cg</span><span class="p">()</span>
     
-    <span class="c1">#the I iteration embed all the ith items in all batches</span>
-    <span class="n">embeded</span> <span class="o">=</span> <span class="p">[</span><span class="n">dn</span><span class="o">.</span><span class="n">lookup_batch</span><span class="p">(</span><span class="n">input_lookup</span><span class="p">,</span> <span class="n">chars</span><span class="p">)</span> <span class="k">for</span> <span class="n">chars</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)]</span>
+    <span class="c1"># The I iteration embed all the i-th items in all batches</span>
+    <span class="n">embedded</span> <span class="o">=</span> <span class="p">[</span><span class="n">dn</span><span class="o">.</span><span class="n">lookup_batch</span><span class="p">(</span><span class="n">input_lookup</span><span class="p">,</span> <span class="n">chars</span><span class="p">)</span> <span class="k">for</span> <span class="n">chars</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)]</span>
     <span class="n">state</span> <span class="o">=</span> <span class="n">lstm</span><span class="o">.</span><span class="n">initial_state</span><span class="p">()</span>
-    <span class="n">output_vec</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">transduce</span><span class="p">(</span><span class="n">embeded</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">output_vec</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">transduce</span><span class="p">(</span><span class="n">embedded</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">dn</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="n">output_w</span><span class="p">)</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">dn</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="n">output_b</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">w</span><span class="o">*</span><span class="n">output_vec</span><span class="o">+</span><span class="n">b</span>
@@ -12041,14 +12074,14 @@ seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Since our function return probabilties over a batch we will use 'pickneglogsoftmax_batch' to get the probabilty of all the correct labels over the batch and 'sum_batches' the sum the errors over all these probabilties</p>
+<p>Since our function returns scores over a batch, we use 'pickneglogsoftmax_batch' to get the probabilty of all the correct labels over the batch and 'sum_batches' the sum the errors over all these probabilties.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">trainX</span><span class="p">,</span> <span class="n">trainY</span><span class="p">):</span>
@@ -12083,14 +12116,14 @@ seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>In order to predict over a batch we will use the numpy value of our probabilties (using 'npvalue') and argmax to get the index of the most probable label</p>
+<p>In order to predict over a batch, we use the numpy value of our probabilities (using 'npvalue') and argmax to get the index of the most probable label.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">testX</span><span class="p">,</span> <span class="n">testY</span><span class="p">):</span>
@@ -12115,7 +12148,7 @@ seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">validate</span><span class="p">(</span><span class="n">batched_X_padded</span><span class="p">,</span> <span class="n">batched_Y</span><span class="p">)</span>
@@ -12134,7 +12167,7 @@ seq: [[1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 1, 0, 0, 0]] label: (0, 0)
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>starting validation
-accuracy:  0.5
+accuracy:  0.7
 starting train
 done training!
 starting validation
@@ -12152,10 +12185,24 @@ accuracy:  1.0
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>*The word probabilty is used to the describe the output vector of our model before softmax is applied this vector is not an actual probabilty</p>
+<p>That's it: our model learned to classify the sequences.</p>
+<p>The method of batching + padding is general whenever we use RNNs.</p>
 
 </div>
 </div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+</div>
+</div>
+</div>
+
 </div>
     </div>
   </div>
