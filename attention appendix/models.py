@@ -1,22 +1,22 @@
-import pycnn as pc
+import dynet as dy
 from sklearn import linear_model
 import data
-RNN_BUILDER = pc.LSTMBuilder
+RNN_BUILDER = dy.LSTMBuilder
 
 
 class SimpleRNNNetwork:
     def __init__(self, rnn_num_of_layers, embeddings_size, state_size):
-        self.model = pc.Model()
+        self.model = dy.Model()
 
         # the embedding paramaters
-        self.model.add_lookup_parameters("lookup", (VOCAB_SIZE, embeddings_size))
+        self.embeddings = self.model.add_lookup_parameters((data.VOCAB_SIZE, embeddings_size))
 
         # the rnn
         self.RNN = RNN_BUILDER(rnn_num_of_layers, embeddings_size, state_size, self.model)
 
         # project the rnn output to a vector of VOCAB_SIZE length
-        self.model.add_parameters("output_w", (VOCAB_SIZE, state_size))
-        self.model.add_parameters("output_b", (VOCAB_SIZE))
+        self.output_w = self.model.add_parameters((data.VOCAB_SIZE, state_size))
+        self.output_b = self.model.add_parameters((data.VOCAB_SIZE))
 
     def _add_eos(self, string):
         string = list(string) + [data.EOS]
@@ -31,8 +31,7 @@ class SimpleRNNNetwork:
         return self._add_eos(string)
 
     def _embed_string(self, string):
-        lookup = self.model["lookup"]
-        return [lookup[char] for char in string]
+        return [self.embeddings[char] for char in string]
 
     def _run_rnn(self, init_state, input_vecs):
         s = init_state
@@ -42,17 +41,17 @@ class SimpleRNNNetwork:
         return rnn_outputs
 
     def _get_probs(self, rnn_output):
-        output_w = pc.parameter(self.model["output_w"])
-        output_b = pc.parameter(self.model["output_b"])
+        output_w = dy.parameter(self.output_w)
+        output_b = dy.parameter(self.output_b)
 
-        probs = pc.softmax(output_w * rnn_output + output_b)
+        probs = dy.softmax(output_w * rnn_output + output_b)
         return probs
 
     def get_loss(self, input_string, output_string):
         input_string = self._preprocess_input(input_string)
         output_string = self._preprocess_output(output_string)
 
-        pc.renew_cg()
+        dy.renew_cg()
 
         embedded_string = self._embed_string(input_string)
         rnn_state = self.RNN.initial_state()
@@ -60,8 +59,8 @@ class SimpleRNNNetwork:
         loss = []
         for rnn_output, output_char in zip(rnn_outputs, output_string):
             probs = self._get_probs(rnn_output)
-            loss.append(-pc.log(pc.pick(probs, output_char)))
-        loss = pc.esum(loss)
+            loss.append(-dy.log(dy.pick(probs, output_char)))
+        loss = dy.esum(loss)
         return loss
 
     def _predict(self, probs):
@@ -72,7 +71,7 @@ class SimpleRNNNetwork:
     def generate(self, input_string):
         input_string = self._preprocess_input(input_string)
 
-        pc.renew_cg()
+        dy.renew_cg()
 
         embedded_string = self._embed_string(input_string)
         rnn_state = self.RNN.initial_state()
@@ -89,18 +88,18 @@ class SimpleRNNNetwork:
 
 class EncoderDecoderNetwork(SimpleRNNNetwork):
     def __init__(self, enc_layers, dec_layers, embeddings_size, enc_state_size, dec_state_size):
-        self.model = pc.Model()
+        self.model = dy.Model()
 
         # the embedding paramaters
-        self.model.add_lookup_parameters("lookup", (data.VOCAB_SIZE, embeddings_size))
+        self.embeddings = self.model.add_lookup_parameters((data.VOCAB_SIZE, embeddings_size))
 
         # the rnns
         self.ENC_RNN = RNN_BUILDER(enc_layers, embeddings_size, enc_state_size, self.model)
         self.DEC_RNN = RNN_BUILDER(dec_layers, enc_state_size, dec_state_size, self.model)
 
         # project the rnn output to a vector of VOCAB_SIZE length
-        self.model.add_parameters("output_w", (data.VOCAB_SIZE, dec_state_size))
-        self.model.add_parameters("output_b", (data.VOCAB_SIZE))
+        self.output_w = self.model.add_parameters((data.VOCAB_SIZE, dec_state_size))
+        self.output_b = self.model.add_parameters((data.VOCAB_SIZE))
 
     def _encode_string(self, embedded_string):
         initial_state = self.ENC_RNN.initial_state()
@@ -114,7 +113,7 @@ class EncoderDecoderNetwork(SimpleRNNNetwork):
         input_string = self._add_eos(input_string)
         output_string = self._add_eos(output_string)
 
-        pc.renew_cg()
+        dy.renew_cg()
 
         embedded_string = self._embed_string(input_string)
         # The encoded string is the hidden state of the last slice of the encoder
@@ -126,15 +125,15 @@ class EncoderDecoderNetwork(SimpleRNNNetwork):
         for output_char in output_string:
             rnn_state = rnn_state.add_input(encoded_string)
             probs = self._get_probs(rnn_state.output())
-            loss.append(-pc.log(pc.pick(probs, output_char)))
-        loss = pc.esum(loss)
+            loss.append(-dy.log(dy.pick(probs, output_char)))
+        loss = dy.esum(loss)
         return loss
 
 
     def generate(self, input_string):
         input_string = self._add_eos(input_string)
 
-        pc.renew_cg()
+        dy.renew_cg()
 
         embedded_string = self._embed_string(input_string)
         encoded_string = self._encode_string(embedded_string)[-1]
@@ -158,25 +157,25 @@ class AttentionNetwork(EncoderDecoderNetwork):
         EncoderDecoderNetwork.__init__(self, enc_layers, dec_layers, embeddings_size, enc_state_size, dec_state_size)
 
         # attention weights
-        self.model.add_parameters("attention_w1", (enc_state_size, enc_state_size))
-        self.model.add_parameters("attention_w2", (enc_state_size, dec_state_size))
-        self.model.add_parameters("attention_v", (1, enc_state_size))
+        self.attention_w1 = self.model.add_parameters((enc_state_size, enc_state_size))
+        self.attention_w2 = self.model.add_parameters((enc_state_size, dec_state_size))
+        self.attention_v = self.model.add_parameters((1, enc_state_size))
 
         self.enc_state_size = enc_state_size
 
     def _attend(self, input_vectors, state):
-        w1 = pc.parameter(self.model['attention_w1'])
-        w2 = pc.parameter(self.model['attention_w2'])
-        v = pc.parameter(self.model['attention_v'])
+        w1 = dy.parameter(self.attention_w1)
+        w2 = dy.parameter(self.attention_w2)
+        v = dy.parameter(self.attention_v)
         attention_weights = []
 
         w2dt = w2 * state.h()[-1]
         for input_vector in input_vectors:
-            attention_weight = v * pc.tanh(w1 * input_vector + w2dt)
+            attention_weight = v * dy.tanh(w1 * input_vector + w2dt)
             attention_weights.append(attention_weight)
-        attention_weights = pc.softmax(pc.concatenate(attention_weights))
+        attention_weights = dy.softmax(dy.concatenate(attention_weights))
 
-        output_vectors = pc.esum(
+        output_vectors = dy.esum(
             [vector * attention_weight for vector, attention_weight in zip(input_vectors, attention_weights)])
         return output_vectors
 
@@ -184,31 +183,31 @@ class AttentionNetwork(EncoderDecoderNetwork):
         input_string = self._add_eos(input_string)
         output_string = self._add_eos(output_string)
 
-        pc.renew_cg()
+        dy.renew_cg()
 
         embedded_string = self._embed_string(input_string)
         encoded_string = self._encode_string(embedded_string)
 
-        rnn_state = self.DEC_RNN.initial_state().add_input(pc.vecInput(self.enc_state_size))
+        rnn_state = self.DEC_RNN.initial_state().add_input(dy.vecInput(self.enc_state_size))
 
         loss = []
         for output_char in output_string:
             attended_encoding = self._attend(encoded_string, rnn_state)
             rnn_state = rnn_state.add_input(attended_encoding)
             probs = self._get_probs(rnn_state.output())
-            loss.append(-pc.log(pc.pick(probs, output_char)))
-        loss = pc.esum(loss)
+            loss.append(-dy.log(dy.pick(probs, output_char)))
+        loss = dy.esum(loss)
         return loss
 
     def generate(self, input_string):
         input_string = self._add_eos(input_string)
 
-        pc.renew_cg()
+        dy.renew_cg()
 
         embedded_string = self._embed_string(input_string)
         encoded_string = self._encode_string(embedded_string)
 
-        rnn_state = self.DEC_RNN.initial_state().add_input(pc.vecInput(self.enc_state_size))
+        rnn_state = self.DEC_RNN.initial_state().add_input(dy.vecInput(self.enc_state_size))
 
         output_string = []
         while True:
