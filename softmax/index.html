@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>hier softmax</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>hier softmax</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11789,7 +11787,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The softmax function, or normalized exponential is used to transform a $n$ dimensional vector into a probabilty over $n$ classes, formaly it is defined as: $P(class=i | x) = \dfrac{e^{x_i}}{\sum_{j=1}^ne^{x_j}}$.</p>
+<p>The softmax function, or normalized exponential is used to transform a $n$ dimensional vector into a probability over $n$ classes, formally it is defined as: $P(class=i | x) = \dfrac{e^{x_i}}{\sum_{j=1}^ne^{x_j}}$.</p>
 
 </div>
 </div>
@@ -11809,7 +11807,13 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;--dynet_mem&#39;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;5000&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 
@@ -11842,7 +11846,17 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The hierarchical softmax function first arranges the output vocabulary in an hierarchical tree (we will discuss later how this tree can be constructed). Once we constructed the tree we can use softmax to select each branch of the tree. For example, given the following hierarchy and the value of the last hidden layer is $V$:</p>
+<p>Let's see what happens to the computation complexity if we divide our vocabulary into to 2 equal non-overlapping groups, and change the classification process to first selecting the group $P(group=i|x)=softmax(x*W_{groupselect}+b_{groupselect})$ and then selecting the word from the group $P(word=w|x) = P(group=i|x)P(word=w|x, group=i)$. Before the computation required us to was $|x||n|+|n|$ operations. After the splitting selecting the group takes $2|x|+2$ operations and selecting the correct item from the group takes $\dfrac{n}{2}|x|+\dfrac{n}{2}$ operations. We reduced the total operations to $(2+\dfrac{n}{2})|x|+2+\dfrac{n}{2}$, for large vocabularies this could mean great reduction in computation time. We can segment our vocabulary however we like and achieve up to $log(n)$ speedup.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This is the hierarchical softmax function first  it arranges the output vocabulary in an hierarchical tree (we will discuss later how this tree can be constructed). Once we constructed the tree we can use softmax to select each branch of the tree. For example, given the following hierarchy and the value of the last hidden layer is $V$:</p>
 
 </div>
 </div>
@@ -11862,7 +11876,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The probabilty of the network to predict "D" is (the probabilty of choosing the 2nd branch in $B_1$)<em>(the probability of choosing the 1st branch on $B_3$). More formally:  $P(class=D | V) = softmax(V \times W_{B_1})_1</em>softmax(V \times W_{B_3})_0$</p>
+<p>The probability of the network to predict "D" is (the probability of choosing the 2nd branch in $B_1$)<em>(the probability of choosing the 1st branch on $B_3$). More formally:  $P(class=D | V) = softmax(V \times W_{B_1})_1</em>softmax(V \times W_{B_3})_0$</p>
 
 </div>
 </div>
@@ -11872,7 +11886,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now that we know what is hierarchical softmax we can start implementing it. We will create an hier_softmax that will recieve an output hierarchy and will be able to calculate of the probabilty of an output given $V$ and to generate to most likely output given a vector $V$.</p>
+<p>Now that we know what is hierarchical softmax we can start implementing it. We will create an hier_softmax that will receive an output hierarchy and will be able to calculate of the probability of an output given $V$ and to generate to most likely output given a vector $V$.</p>
 
 </div>
 </div>
@@ -11892,54 +11906,51 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">shuffle</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">copy</span>
 
-<span class="k">def</span> <span class="nf">tag_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-            <span class="n">tag</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">tag_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-    <span class="k">yield</span> <span class="n">tree</span>
-    <span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_get_subtrees</span><span class="p">(</span><span class="n">subtree</span><span class="p">):</span>
-                <span class="k">yield</span> <span class="n">x</span>
+<span class="k">class</span> <span class="nc">TreeTools</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#memoization for _count_nodes functions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                
+    <span class="k">def</span> <span class="nf">_get_subtrees</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">tree</span>
+        <span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_subtrees</span><span class="p">(</span><span class="n">subtree</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">x</span>
 
-
-<span class="c1"># Returns pairs of paths and leafves of a tree</span>
-<span class="k">def</span> <span class="nf">_get_leaves_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">subtree</span><span class="p">):</span>
-                <span class="k">yield</span> <span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">subtree</span>
-
-<span class="c1">#memoization for _count_nodes functions</span>
-<span class="n">_count_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="c1"># Returns the number of nodes in a tree (not including root)</span>
-<span class="k">def</span> <span class="nf">_count_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">_count_nodes_dict</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_count_nodes_dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">_count_nodes_dict</span><span class="p">)]</span>
-    <span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
-            <span class="n">size</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">_count_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-    <span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">_count_nodes_dict</span><span class="p">)]</span> <span class="o">=</span> <span class="n">size</span>
-    <span class="k">return</span> <span class="n">size</span>
+    <span class="c1"># Returns pairs of paths and leafves of a tree</span>
+    <span class="k">def</span> <span class="nf">_get_leaves_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">subtree</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">subtree</span>
+    
+    <span class="c1"># Returns the number of nodes in a tree (not including root)</span>
+    <span class="k">def</span> <span class="nf">_count_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">)]</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">)]</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="k">return</span> <span class="n">size</span>
 
 
-<span class="c1"># Returns all the nodes in a path</span>
-<span class="k">def</span> <span class="nf">_get_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-    <span class="n">next_node</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">decision</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
-        <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_node</span><span class="p">)</span>
-        <span class="n">next_node</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">_count_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">[:</span><span class="n">decision</span><span class="p">])</span>
-        <span class="n">tree</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="n">decision</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">nodes</span>
+    <span class="c1"># Returns all the nodes in a path</span>
+    <span class="k">def</span> <span class="nf">_get_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">next_node</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">decision</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+            <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_node</span><span class="p">)</span>
+            <span class="n">next_node</span> <span class="o">+=</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">[:</span><span class="n">decision</span><span class="p">])</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="n">decision</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">nodes</span>
 
 
 <span class="c1"># turns a list to a binary tree</span>
@@ -11978,22 +11989,24 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="k">print</span> <span class="s1">&#39;Our tree:&#39;</span><span class="p">,</span><span class="n">tree</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Our tree:&#39;</span><span class="p">,</span><span class="n">tree</span><span class="p">)</span>
 
-<span class="k">print</span> <span class="s1">&#39;All subtrees:&#39;</span>
-<span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-    <span class="k">print</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">subtree</span>
+<span class="n">tree_tools</span> <span class="o">=</span> <span class="n">TreeTools</span><span class="p">()</span>
 
-<span class="k">print</span> <span class="s1">&#39;All paths and leaves:&#39;</span>
-<span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-    <span class="k">print</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">subtree</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All subtrees:&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree_tools</span><span class="o">.</span><span class="n">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">subtree</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All paths and leaves:&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree_tools</span><span class="o">.</span><span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">subtree</span><span class="p">)</span>
     
-<span class="k">print</span> <span class="s1">&#39;Number of nodes in the tree:&#39;</span><span class="p">,</span><span class="n">_count_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of nodes in the tree:&#39;</span><span class="p">,</span><span class="n">tree_tools</span><span class="o">.</span><span class="n">_count_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">))</span>
 
-<span class="k">print</span> <span class="s1">&#39;all nodes in path [0, 0, 0, 0]:&#39;</span>
-<span class="k">for</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">_get_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
-    <span class="k">print</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">nodes</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;all nodes in path [0, 0, 0, 0]:&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">nodes</span> <span class="ow">in</span> <span class="n">tree_tools</span><span class="o">.</span><span class="n">_get_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">nodes</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12006,34 +12019,34 @@ div#notebook {
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Our tree: [[[[7, 5], [4, 8]], [[3, 2], [6, 1]]], [0, 9]]
+<pre>Our tree: [[[[9, 3], [8, 4]], [[7, 0], [5, 2]]], [6, 1]]
 All subtrees:
-	[[[[7, 5], [4, 8]], [[3, 2], [6, 1]]], [0, 9]]
-	[[[7, 5], [4, 8]], [[3, 2], [6, 1]]]
-	[[7, 5], [4, 8]]
-	[7, 5]
-	[4, 8]
-	[[3, 2], [6, 1]]
-	[3, 2]
-	[6, 1]
-	[0, 9]
+	 [[[[9, 3], [8, 4]], [[7, 0], [5, 2]]], [6, 1]]
+	 [[[9, 3], [8, 4]], [[7, 0], [5, 2]]]
+	 [[9, 3], [8, 4]]
+	 [9, 3]
+	 [8, 4]
+	 [[7, 0], [5, 2]]
+	 [7, 0]
+	 [5, 2]
+	 [6, 1]
 All paths and leaves:
-	([0, 0, 0, 0], 7)
-	([0, 0, 0, 1], 5)
-	([0, 0, 1, 0], 4)
-	([0, 0, 1, 1], 8)
-	([0, 1, 0, 0], 3)
-	([0, 1, 0, 1], 2)
-	([0, 1, 1, 0], 6)
-	([0, 1, 1, 1], 1)
-	([1, 0], 0)
-	([1, 1], 9)
+	 ([0, 0, 0, 0], 9)
+	 ([0, 0, 0, 1], 3)
+	 ([0, 0, 1, 0], 8)
+	 ([0, 0, 1, 1], 4)
+	 ([0, 1, 0, 0], 7)
+	 ([0, 1, 0, 1], 0)
+	 ([0, 1, 1, 0], 5)
+	 ([0, 1, 1, 1], 2)
+	 ([1, 0], 6)
+	 ([1, 1], 1)
 Number of nodes in the tree: 14
 all nodes in path [0, 0, 0, 0]:
-	0
-	15
-	30
-	45
+	 0
+	 15
+	 30
+	 45
 </pre>
 </div>
 </div>
@@ -12047,7 +12060,7 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>The hier softmax class:</p>
+<p>We now have everything we need to write the hierarchical softmax class:</p>
 
 </div>
 </div>
@@ -12057,21 +12070,21 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">pycnn</span> <span class="kn">as</span> <span class="nn">pc</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">dynet</span> <span class="k">as</span> <span class="nn">dy</span>
 
 <span class="k">class</span> <span class="nc">hier_softmax</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">contex_size</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">_count_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tree_tools</span> <span class="o">=</span> <span class="n">TreeTools</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">str2weight</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1">#create a weight matrix and bias vector for each node in the tree</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">)):</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="s2">&quot;softmax_node_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_w&quot;</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="p">),</span> <span class="n">contex_size</span><span class="p">))</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="s2">&quot;softmax_node_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_b&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tree_tools</span><span class="o">.</span><span class="n">_get_subtrees</span><span class="p">(</span><span class="n">tree</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">str2weight</span><span class="p">[</span><span class="s2">&quot;softmax_node_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_w&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="p">),</span> <span class="n">contex_size</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">str2weight</span><span class="p">[</span><span class="s2">&quot;softmax_node_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_b&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="p">))</span>
         
         <span class="c1">#create a dictionary from each value to its path</span>
         <span class="n">value_to_path_and_nodes_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="n">_get_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_tools</span><span class="o">.</span><span class="n">_get_leaves_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_tools</span><span class="o">.</span><span class="n">_get_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
             <span class="n">value_to_path_and_nodes_dict</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">char2int</span><span class="p">[</span><span class="n">value</span><span class="p">]]</span> <span class="o">=</span> <span class="n">path</span><span class="p">,</span> <span class="n">nodes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">value_to_path_and_nodes_dict</span> <span class="o">=</span> <span class="n">value_to_path_and_nodes_dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
@@ -12082,15 +12095,15 @@ all nodes in path [0, 0, 0, 0]:
         <span class="n">loss</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">path</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_to_path_and_nodes_dict</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
-            <span class="n">w</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;softmax_node_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_w&quot;</span><span class="p">])</span>
-            <span class="n">b</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;softmax_node_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_b&quot;</span><span class="p">])</span>
-            <span class="n">probs</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">w</span><span class="o">*</span><span class="n">context</span><span class="o">+</span><span class="n">b</span><span class="p">)</span>
-            <span class="n">loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">pc</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">p</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">pc</span><span class="o">.</span><span class="n">esum</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">str2weight</span><span class="p">[</span><span class="s2">&quot;softmax_node_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_w&quot;</span><span class="p">])</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">str2weight</span><span class="p">[</span><span class="s2">&quot;softmax_node_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_b&quot;</span><span class="p">])</span>
+            <span class="n">probs</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">w</span><span class="o">*</span><span class="n">context</span><span class="o">+</span><span class="n">b</span><span class="p">)</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">dy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">dy</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">p</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">dy</span><span class="o">.</span><span class="n">esum</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
 
     <span class="c1">#get the most likely</span>
     <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-        <span class="n">best_value</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">best_value</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">best_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_to_path_and_nodes_dict</span><span class="p">:</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -12110,7 +12123,7 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we can test the performance improvement we can get from the hier_softmax. Again, we will learn the reverse function, but this time on a big vocabulary</p>
+<p>Now we can test the performance improvement we can get from the hier_softmax. Again, we will learn the reverse function, but this time on a much bigger vocabulary</p>
 
 </div>
 </div>
@@ -12120,12 +12133,12 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">choice</span><span class="p">,</span> <span class="n">randrange</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">choice</span><span class="p">,</span> <span class="n">randrange</span>
 <span class="kn">import</span> <span class="nn">data</span>
 
 <span class="n">data</span><span class="o">.</span><span class="n">set_vocab_size</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 
-<span class="k">print</span> <span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 </pre></div>
 
 </div>
@@ -12138,7 +12151,7 @@ all nodes in path [0, 0, 0, 0]:
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>(&#39;203 147 126 52&#39;, &#39;52 126 147 203&#39;)
+<pre>(&#39;930 859 774 346&#39;, &#39;346 774 859 930&#39;)
 </pre>
 </div>
 </div>
@@ -12152,11 +12165,11 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
 <span class="n">MAX_STRING_LEN</span> <span class="o">=</span> <span class="mi">5</span>
 
-<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">3000</span><span class="p">)]</span>
-<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">50</span><span class="p">)]</span>
+<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3000</span><span class="p">)]</span>
+<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">)]</span>
 
 <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">,</span> <span class="n">epochs</span> <span class="o">=</span> <span class="mi">20</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">get_val_set_loss</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">val_set</span><span class="p">):</span>
@@ -12164,7 +12177,7 @@ all nodes in path [0, 0, 0, 0]:
         <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
     
     <span class="n">train_set</span> <span class="o">=</span> <span class="n">train_set</span><span class="o">*</span><span class="n">epochs</span>
-    <span class="n">trainer</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">SimpleSGDTrainer</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">trainer</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">SimpleSGDTrainer</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
     <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">training_example</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_set</span><span class="p">):</span>
         <span class="n">input_string</span><span class="p">,</span> <span class="n">output_string</span> <span class="o">=</span> <span class="n">training_example</span>
@@ -12173,10 +12186,10 @@ all nodes in path [0, 0, 0, 0]:
         <span class="n">loss_value</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
         <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="n">trainer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-    <span class="k">print</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">-</span><span class="n">start</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
         
 
-    <span class="k">print</span> <span class="s1">&#39;loss on validation set:&#39;</span><span class="p">,</span> <span class="n">get_val_set_loss</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loss on validation set:&#39;</span><span class="p">,</span> <span class="n">get_val_set_loss</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">val_set</span><span class="p">))</span>
 </pre></div>
 
 </div>
@@ -12199,7 +12212,7 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">models</span> <span class="kn">import</span> <span class="n">AttentionNetwork</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">models</span> <span class="k">import</span> <span class="n">AttentionNetwork</span>
 
 <span class="n">ENC_RNN_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="n">DEC_RNN_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
@@ -12218,12 +12231,38 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span><span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
-
-<span class="c1">#train(att, train_set, val_set)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span><span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
 </pre></div>
 
 </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0:08:28.549663
+loss on validation set: 38.21273498877417
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -12240,27 +12279,27 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">characters</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">characters</span><span class="p">)</span>
 
-<span class="n">RNN_BUILDER</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">LSTMBuilder</span>
+<span class="n">RNN_BUILDER</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">LSTMBuilder</span>
 <span class="k">class</span> <span class="nc">AttentionNetworkWithHierSoftmax</span><span class="p">(</span><span class="n">AttentionNetwork</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
 
         <span class="c1"># the embedding paramaters</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_lookup_parameters</span><span class="p">(</span><span class="s2">&quot;lookup&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">VOCAB_SIZE</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_lookup_parameters</span><span class="p">((</span><span class="n">data</span><span class="o">.</span><span class="n">VOCAB_SIZE</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">))</span>
 
         <span class="c1"># the rnns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ENC_RNN</span> <span class="o">=</span> <span class="n">RNN_BUILDER</span><span class="p">(</span><span class="n">enc_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DEC_RNN</span> <span class="o">=</span> <span class="n">RNN_BUILDER</span><span class="p">(</span><span class="n">dec_layers</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
         
         <span class="c1"># attention weights</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="s2">&quot;attention_w1&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">enc_state_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="s2">&quot;attention_w2&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="s2">&quot;attention_v&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attention_w1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="n">enc_state_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attention_w2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attention_v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">enc_state_size</span> <span class="o">=</span> <span class="n">enc_state_size</span>
         
@@ -12270,8 +12309,7 @@ all nodes in path [0, 0, 0, 0]:
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hier_softmax</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">rnn_output</span><span class="p">,</span> <span class="n">output_char</span><span class="p">)</span>
     
     <span class="k">def</span> <span class="nf">_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnn_output</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">self</span><span class="o">.</span><span class="n">hier_softmax</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">rnn_output</span><span class="p">)</span>
-            
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">self</span><span class="o">.</span><span class="n">hier_softmax</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">rnn_output</span><span class="p">)</span>   
 </pre></div>
 
 </div>
@@ -12281,16 +12319,42 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetworkWithHierSoftmax</span><span class="p">(</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetworkWithHierSoftmax</span><span class="p">(</span>
     <span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">,</span> <span class="n">output_tree</span><span class="p">)</span>
-
-<span class="c1">#train(att, train_set, val_set)</span>
 </pre></div>
 
 </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0:07:50.478698
+loss on validation set: 0.03127289465692229
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -12300,20 +12364,20 @@ all nodes in path [0, 0, 0, 0]:
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Has we can see the hierarchical softmax shaved almost 12.5% off our training time. On real world data a vocabulary of 1,000 words is considered tiny so the gain should be considerably higher. Other difference from real data is that the training examples are not uniformly distributed and external information (such as wordnet) can further improve the hier softmax performance (<a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.221.8829&amp;rep=rep1&amp;type=pdf#page=255">http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.221.8829&amp;rep=rep1&amp;type=pdf#page=255</a>)</p>
+<p>As we can see the hierarchical softmax shaved almost 12.5% off our training time. On real world data a vocabulary of 1,000 words is considered tiny so the gain should be considerably higher. Other difference from real word data is that the training examples will not be uniformly distributed and external information (such as wordnet) can further improve the hier softmax performance (<a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.221.8829&amp;rep=rep1&amp;type=pdf#page=255">http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.221.8829&amp;rep=rep1&amp;type=pdf#page=255</a>)</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">data</span><span class="o">.</span><span class="n">set_vocab_size</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span><span class="o">.</span><span class="n">set_vocab_size</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
 
-<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
-<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
 
 <span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">characters</span><span class="p">)</span>
 
@@ -12346,10 +12410,10 @@ all nodes in path [0, 0, 0, 0]:
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>0:00:00.041189
-loss on validation set: 83.8740997314
-0:00:00.064382
-loss on validation set: 57.4016151428
+<pre>0:00:00.059836
+loss on validation set: 49.85905075073242
+0:00:00.093535
+loss on validation set: 34.38323974609375
 </pre>
 </div>
 </div>
@@ -12363,25 +12427,36 @@ loss on validation set: 57.4016151428
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>In this extreme example we achieved 2x speedup!</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>More methods to deal with large vocabulary <a href="https://www.tensorflow.org/extras/candidate_sampling.pdf">https://www.tensorflow.org/extras/candidate_sampling.pdf</a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <p>About me: <a href="https://www.cs.bgu.ac.il/~talbau/">https://www.cs.bgu.ac.il/~talbau/</a></p>
 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span> 
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
     </div>
   </div>
 </body>
+
+ 
+
+
 </html>
