@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Neural Attention Mechanism</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Neural Attention Mechanism</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11631,8 +11629,10 @@ ul.typeahead-list > li > a {
 .highlight .mh { color: #666666 } /* Literal.Number.Hex */
 .highlight .mi { color: #666666 } /* Literal.Number.Integer */
 .highlight .mo { color: #666666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
 .highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
 .highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
 .highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
 .highlight .s2 { color: #BA2121 } /* Literal.String.Double */
 .highlight .se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
@@ -11643,9 +11643,11 @@ ul.typeahead-list > li > a {
 .highlight .s1 { color: #BA2121 } /* Literal.String.Single */
 .highlight .ss { color: #19177C } /* Literal.String.Symbol */
 .highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #0000FF } /* Name.Function.Magic */
 .highlight .vc { color: #19177C } /* Name.Variable.Class */
 .highlight .vg { color: #19177C } /* Name.Variable.Global */
 .highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
 .highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
     </style>
 <style type="text/css">
@@ -11751,7 +11753,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Sequence-To-Sequence-Attention-Models-In-PyCNN">Sequence To Sequence Attention Models In PyCNN<a class="anchor-link" href="#Sequence-To-Sequence-Attention-Models-In-PyCNN">&#182;</a></h1>
+<h1 id="Sequence-To-Sequence-Attention-Models-In-DyNet">Sequence To Sequence Attention Models In DyNet<a class="anchor-link" href="#Sequence-To-Sequence-Attention-Models-In-DyNet">&#182;</a></h1>
 </div>
 </div>
 </div>
@@ -11771,8 +11773,8 @@ For example: [Bahdanau et al.2015] Neural Machine Translation by Jointly Learnin
 <li>a sequence to sequence encoder-decoder model (<a href="https://www.tensorflow.org/versions/r0.9/tutorials/seq2seq/index.html">https://www.tensorflow.org/versions/r0.9/tutorials/seq2seq/index.html</a>)</li>
 <li>finally, an Attention Based model as introduced by Bahdanau et al.</li>
 </ul>
-<p>This is a hands-on description of these models, using the PyCNN framework.
-Make sure you first install PyCNN following these instructions: <a href="https://github.com/clab/cnn/blob/master/INSTALL.md">https://github.com/clab/cnn/blob/master/INSTALL.md</a></p>
+<p>This is a hands-on description of these models, using the DyNet framework.
+Make sure you first install Dynet following these instructions: <a href="http://dynet.readthedocs.io/en/latest/python.html">http://dynet.readthedocs.io/en/latest/python.html</a></p>
 <p>The task we address is the following: the input is a random string $(c_0, c_1, c_2 ... c_n)$ of random length n and the output is the reversed string $(c_n, c_{n-1}, c_{n-2} ... c_0)$.</p>
 <p>Let's build a function that generates an $(input, output)$ instance of our reverse function:</p>
 
@@ -13443,7 +13445,7 @@ $W_1$, $W_2$ and $V$ are learned parameters <br></p>
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">AttentionNetwork</span><span class="p">(</span><span class="n">EncoderDecoderNetwork</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">):</span>
-        <span class="n">EncoderDecoderNetwork</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">)</span>
+        <span class="n">EncoderDecoderNetwork</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">)</span>
 
         <span class="c1"># attention weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attention_w1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_parameters</span><span class="p">((</span><span class="n">enc_state_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">))</span>
@@ -13996,7 +13998,7 @@ $encOutput_i$ when generating each of the output characters $Output_j$</p>
 
 <span class="k">class</span> <span class="nc">AttentionNetworkWithPrint</span><span class="p">(</span><span class="n">AttentionNetwork</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">):</span>
-        <span class="n">AttentionNetwork</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">)</span>
+        <span class="n">AttentionNetwork</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enc_layers</span><span class="p">,</span> <span class="n">dec_layers</span><span class="p">,</span> <span class="n">embeddings_size</span><span class="p">,</span> <span class="n">enc_state_size</span><span class="p">,</span> <span class="n">dec_state_size</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">should_print</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">att_mat</span> <span class="o">=</span> <span class="p">[]</span>
@@ -14555,4 +14557,8 @@ ARJCEiAhJAESQhIg8b8Y5+6QWTXs9gAAAABJRU5ErkJggg==
     </div>
   </div>
 </body>
+
+ 
+
+
 </html>
