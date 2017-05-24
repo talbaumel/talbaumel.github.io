@@ -11629,8 +11629,10 @@ ul.typeahead-list > li > a {
 .highlight .mh { color: #666666 } /* Literal.Number.Hex */
 .highlight .mi { color: #666666 } /* Literal.Number.Integer */
 .highlight .mo { color: #666666 } /* Literal.Number.Oct */
+.highlight .sa { color: #BA2121 } /* Literal.String.Affix */
 .highlight .sb { color: #BA2121 } /* Literal.String.Backtick */
 .highlight .sc { color: #BA2121 } /* Literal.String.Char */
+.highlight .dl { color: #BA2121 } /* Literal.String.Delimiter */
 .highlight .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
 .highlight .s2 { color: #BA2121 } /* Literal.String.Double */
 .highlight .se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
@@ -11641,9 +11643,11 @@ ul.typeahead-list > li > a {
 .highlight .s1 { color: #BA2121 } /* Literal.String.Single */
 .highlight .ss { color: #19177C } /* Literal.String.Symbol */
 .highlight .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #0000FF } /* Name.Function.Magic */
 .highlight .vc { color: #19177C } /* Name.Variable.Class */
 .highlight .vg { color: #19177C } /* Name.Variable.Global */
 .highlight .vi { color: #19177C } /* Name.Variable.Instance */
+.highlight .vm { color: #19177C } /* Name.Variable.Magic */
 .highlight .il { color: #666666 } /* Literal.Number.Integer.Long */
     </style>
 <style type="text/css">
@@ -11684,6 +11688,9 @@ ul.typeahead-list > li > a {
 
 .ansi-bold { font-weight: bold; }
 
+    </style>
+<style type="text/css">
+    
     </style>
 
 
@@ -11932,8 +11939,8 @@ div#notebook {
     
     <span class="c1"># Returns the number of nodes in a tree (not including root)</span>
     <span class="k">def</span> <span class="nf">_count_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_nodes_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">tree</span><span class="p">)]</span>
         <span class="n">size</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
@@ -12019,34 +12026,34 @@ div#notebook {
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Our tree: [[[[9, 3], [8, 4]], [[7, 0], [5, 2]]], [6, 1]]
+<pre>Our tree: [[[[7, 5], [8, 6]], [[9, 3], [1, 0]]], [4, 2]]
 All subtrees:
-	 [[[[9, 3], [8, 4]], [[7, 0], [5, 2]]], [6, 1]]
-	 [[[9, 3], [8, 4]], [[7, 0], [5, 2]]]
-	 [[9, 3], [8, 4]]
+	 [[[[7, 5], [8, 6]], [[9, 3], [1, 0]]], [4, 2]]
+	 [[[7, 5], [8, 6]], [[9, 3], [1, 0]]]
+	 [[7, 5], [8, 6]]
+	 [7, 5]
+	 [8, 6]
+	 [[9, 3], [1, 0]]
 	 [9, 3]
-	 [8, 4]
-	 [[7, 0], [5, 2]]
-	 [7, 0]
-	 [5, 2]
-	 [6, 1]
+	 [1, 0]
+	 [4, 2]
 All paths and leaves:
-	 ([0, 0, 0, 0], 9)
-	 ([0, 0, 0, 1], 3)
+	 ([0, 0, 0, 0], 7)
+	 ([0, 0, 0, 1], 5)
 	 ([0, 0, 1, 0], 8)
-	 ([0, 0, 1, 1], 4)
-	 ([0, 1, 0, 0], 7)
-	 ([0, 1, 0, 1], 0)
-	 ([0, 1, 1, 0], 5)
-	 ([0, 1, 1, 1], 2)
-	 ([1, 0], 6)
-	 ([1, 1], 1)
-Number of nodes in the tree: 14
+	 ([0, 0, 1, 1], 6)
+	 ([0, 1, 0, 0], 9)
+	 ([0, 1, 0, 1], 3)
+	 ([0, 1, 1, 0], 1)
+	 ([0, 1, 1, 1], 0)
+	 ([1, 0], 4)
+	 ([1, 1], 2)
+Number of nodes in the tree: 8
 all nodes in path [0, 0, 0, 0]:
 	 0
-	 15
-	 30
-	 45
+	 1
+	 2
+	 3
 </pre>
 </div>
 </div>
@@ -12151,7 +12158,7 @@ all nodes in path [0, 0, 0, 0]:
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>(&#39;930 859 774 346&#39;, &#39;346 774 859 930&#39;)
+<pre>(&#39;838 435 900 65&#39;, &#39;65 900 435 838&#39;)
 </pre>
 </div>
 </div>
@@ -12165,7 +12172,7 @@ all nodes in path [0, 0, 0, 0]:
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 <span class="n">MAX_STRING_LEN</span> <span class="o">=</span> <span class="mi">5</span>
 
 <span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3000</span><span class="p">)]</span>
@@ -12178,15 +12185,13 @@ all nodes in path [0, 0, 0, 0]:
     
     <span class="n">train_set</span> <span class="o">=</span> <span class="n">train_set</span><span class="o">*</span><span class="n">epochs</span>
     <span class="n">trainer</span> <span class="o">=</span> <span class="n">dy</span><span class="o">.</span><span class="n">SimpleSGDTrainer</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
-    <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">training_example</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_set</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">training_example</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">train_set</span><span class="p">)):</span>
         <span class="n">input_string</span><span class="p">,</span> <span class="n">output_string</span> <span class="o">=</span> <span class="n">training_example</span>
         
         <span class="n">loss</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">get_loss</span><span class="p">(</span><span class="n">input_string</span><span class="p">,</span> <span class="n">output_string</span><span class="p">)</span>
         <span class="n">loss_value</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
         <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="n">trainer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span>
         
 
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loss on validation set:&#39;</span><span class="p">,</span> <span class="n">get_val_set_loss</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">val_set</span><span class="p">))</span>
@@ -12256,9 +12261,21 @@ all nodes in path [0, 0, 0, 0]:
 
 
 <div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>100%|██████████| 60000/60000 [07:53&lt;00:00, 126.66it/s]</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>0:08:28.549663
-loss on validation set: 38.21273498877417
+<pre>loss on validation set: 1.537074926076457
+</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>
 </pre>
 </div>
 </div>
@@ -12348,9 +12365,21 @@ loss on validation set: 38.21273498877417
 
 
 <div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>100%|██████████| 60000/60000 [07:02&lt;00:00, 142.16it/s]</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>0:07:50.478698
-loss on validation set: 0.03127289465692229
+<pre>loss on validation set: 0.9025957629783079
+</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>
 </pre>
 </div>
 </div>
@@ -12365,69 +12394,6 @@ loss on validation set: 0.03127289465692229
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>As we can see the hierarchical softmax shaved almost 12.5% off our training time. On real world data a vocabulary of 1,000 words is considered tiny so the gain should be considerably higher. Other difference from real word data is that the training examples will not be uniformly distributed and external information (such as wordnet) can further improve the hier softmax performance (<a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.221.8829&amp;rep=rep1&amp;type=pdf#page=255">http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.221.8829&amp;rep=rep1&amp;type=pdf#page=255</a>)</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span><span class="o">.</span><span class="n">set_vocab_size</span><span class="p">(</span><span class="mi">100000</span><span class="p">)</span>
-
-<span class="n">train_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
-<span class="n">val_set</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">sample_model</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_STRING_LEN</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span>
-
-<span class="n">output_tree</span> <span class="o">=</span> <span class="n">random_binary_full_tree</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">characters</span><span class="p">)</span>
-
-
-<span class="n">ENC_RNN_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">DEC_RNN_NUM_OF_LAYERS</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">EMBEDDINGS_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">ENC_STATE_SIZE</span> <span class="o">=</span> <span class="mi">10</span>
-<span class="n">DEC_STATE_SIZE</span> <span class="o">=</span> <span class="mi">100</span>
-
-
-<span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetworkWithHierSoftmax</span><span class="p">(</span>
-    <span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">,</span> <span class="n">output_tree</span><span class="p">)</span>
-
-<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-<span class="n">att</span> <span class="o">=</span> <span class="n">AttentionNetwork</span><span class="p">(</span>
-    <span class="n">ENC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">DEC_RNN_NUM_OF_LAYERS</span><span class="p">,</span> <span class="n">EMBEDDINGS_SIZE</span><span class="p">,</span> <span class="n">ENC_STATE_SIZE</span><span class="p">,</span> <span class="n">DEC_STATE_SIZE</span><span class="p">)</span>
-
-<span class="n">train</span><span class="p">(</span><span class="n">att</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">val_set</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area"><div class="prompt"></div>
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>0:00:00.059836
-loss on validation set: 49.85905075073242
-0:00:00.093535
-loss on validation set: 34.38323974609375
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>In this extreme example we achieved 2x speedup!</p>
 
 </div>
 </div>
