@@ -1,0 +1,6 @@
+asthma causes|asthma allergy|asthma mold allergy
+asthma treatment|asthma medication|corticosteroids
+exercise induced asthma|exercise for asthmatic
+atopic dermatitis|atopic dermatitis medications|atopic dermatitis side effects
+atopic dermatitis|atopic dermatitis children|atopic dermatitis treatment
+atopic dermatitis|atopic dermatitis exercise activity|atopic dermatitis treatment
